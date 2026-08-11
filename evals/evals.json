@@ -1,0 +1,26 @@
+{
+  "skill_name": "explainer-video-builder-skill",
+  "evals": [
+    {
+      "id": 1,
+      "name": "complete-demo-video",
+      "prompt": "把我的项目和素材做成一个中期汇报讲解视频，要有中文配音，画面用白底学术风，先讲背景痛点再讲方案，最后放实测视频，大约 1 分钟。",
+      "expected_output": "生成 1080p MP4：九段叙事完整（片头/背景/痛点/方案/实测预告/实测/结束），白底学术卡 + 实测视频，中文配音与画面按时间轴对齐",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "flat-icon-architecture-svg",
+      "prompt": "给这个系统画一张架构图 SVG，按 Flat Icon 规范：白底、细边框组件、tint 图标、正交走线、8px 网格。",
+      "expected_output": "1920×1080 SVG：三列区域（发送端/公网/接收端），组件 400×96 细边框 + 44px tint 图标，主流程蓝 #2563eb、反馈红 #dc2626 虚线，坐标对齐 8px 网格",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "regenerate-with-new-copy",
+      "prompt": "我改了配音文案，重出一版视频。上一版的时间轴和画面结构都要保留，只换内容。",
+      "expected_output": "复用原时间轴，仅替换文案后重跑全流程，产出新的 MP4 且总长不变",
+      "files": []
+    }
+  ]
+}
