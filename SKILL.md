@@ -123,4 +123,5 @@ flowchart LR
 | 预告卡字线重叠 | 大字/副字与装饰线叠 | 装饰线 y 与文字边界保持 ≥40px，用字号推算 |
 | 混音爆音 | 多处配音+音乐叠加削波 | `alimiter=limit=0.95` |
 | SVG 渲染失真 | rsvg 转的图跟浏览器不一致 | 用 chrome headless 截图 |
+| TTS 多音字误读 | "重传"被读成 zhòng chuán（应为 chóng chuán） | 换措辞规避歧义词："无需重传"→"无需重新传输"；全文扫一遍多音字（重/调/度/系/数/长…） |
 | 视频打不开 | totem 报缺解码器 | 装 gstreamer libav/bad/ugly 插件 |
