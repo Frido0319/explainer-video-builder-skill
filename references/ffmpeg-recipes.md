@@ -1,6 +1,6 @@
-# ffmpeg 合成配方（时间轴合成 + 坑）
+# ffmpeg 合成配方（时间轴合成 + 字幕烧录 + 坑）
 
-参考成品：`build_video.sh`（智信2026 演示，107s，9 段）。
+参考成品：`build_video.sh`（智信2026 演示，157s，10 段，带中文字幕）。
 
 ## 0. 时间轴先算好
 
@@ -75,12 +75,22 @@ alimiter=limit=0.95:level=disabled[a]" \
 # concat 需要绝对路径文件列表（-safe 0）
 printf "file '%s'\n" $(pwd)/seg/*.mp4 > seg/concat.txt   # 按 01..09 顺序
 ffmpeg -y -f concat -safe 0 -i seg/concat.txt -c copy seg/video_only.mp4
+```
 
+### 5.5 字幕烧录（最终合成，必须重编码）
+
+字幕是**必须项**。用 `make_subs.py` 生成 `subs.srt` 后，烧录必须**重编码**（不能 `-c:v copy`）：
+
+```bash
 ffmpeg -y -i seg/video_only.mp4 -i audio/full_audio.wav \
-  -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k \
+  -vf "subtitles=subs.srt:force_style='FontName=Noto Sans CJK SC,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=2,Alignment=2'" \
+  -map 0:v -map 1:a -c:v libx264 -preset medium -crf 20 -c:a aac -b:a 192k \
   -movflags +faststart -t "$END_END" 成品.mp4
 ```
 
+- **绝不能加 `MarginV=45`**：实测 ffmpeg 4.2.7 + libass 下，force_style 里含 MarginV=45 会导致**字幕完全不渲染**（成片整帧 0 暗像素）。去掉 MarginV 后正常。
+- 字幕烧录后实际占 **y960-1049**，所以卡片内容最下缘要压到 ≤y940（见 cards.md）。
+- 8 位色值 + `Shadow=2` + `Alignment=2`（底部居中）在此版本 libass 正常。
 - 输出 H.264 + AAC + faststart，1920×1080 yuv420p。
 
 ## 6. 视频打不开（GStreamer 解码器缺失）

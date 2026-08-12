@@ -4,8 +4,8 @@
     {
       "id": 1,
       "name": "complete-demo-video",
-      "prompt": "把我的项目和素材做成一个中期汇报讲解视频，要有中文配音，画面用白底学术风，先讲背景痛点再讲方案，最后放实测视频，大约 1 分钟。",
-      "expected_output": "生成 1080p MP4：九段叙事完整（片头/背景/痛点/方案/实测预告/实测/结束），白底学术卡 + 实测视频，中文配音与画面按时间轴对齐",
+      "prompt": "把我的项目和素材做成一个中期汇报讲解视频，要有中文配音、配上中文字幕，画面用白底学术风，先讲背景痛点再讲方案，最后放实测视频，大约 1 分钟。",
+      "expected_output": "生成 1080p MP4：九段叙事完整（片头/背景/痛点/方案/实测预告/实测/结束），白底学术卡 + 实测视频，中文配音与画面按时间轴对齐，中文字幕已烧录且不遮挡任何内容",
       "files": []
     },
     {
@@ -18,8 +18,22 @@
     {
       "id": 3,
       "name": "regenerate-with-new-copy",
-      "prompt": "我改了配音文案，重出一版视频。上一版的时间轴和画面结构都要保留，只换内容。",
-      "expected_output": "复用原时间轴，仅替换文案后重跑全流程，产出新的 MP4 且总长不变",
+      "prompt": "我改了配音文案，重出一版视频。上一版的时间轴和画面结构都要保留，只换内容，字幕也跟着新文案重新生成。",
+      "expected_output": "复用原时间轴，仅替换文案后重跑全流程，字幕自动随新文案重生成，产出新的 MP4 且总长不变",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "ppt-originals-no-text-overlap",
+      "prompt": "画面里的图要用我 PPT 里的原图，不要另外找图，贴完检查图片不能挡到文字。",
+      "expected_output": "卡片图片全部来自用户 PPT 导出目录（pptx_extract/ppt/media），paste_ppt_card 等比 contain 不裁剪；verify_text_not_covered 自检通过（图区域无文字侵入，亮度均值>235 且暗像素=0）",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "subtitle-band-no-overlap",
+      "prompt": "要配上字幕，但字幕不能遮挡任何文字和图片。",
+      "expected_output": "make_subs.py 从配音文案生成 subs.srt；所有卡片内容最下缘 ≤y940；字幕烧录后占 y960-1049；verify_video.py --cards 终检：卡片区 diff<4 且字幕带渲染像素>300",
       "files": []
     }
   ]
