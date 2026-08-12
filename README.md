@@ -182,6 +182,3 @@ flowchart LR
     └── evals.json
 ```
 
-## License
-
-[MIT](LICENSE)
