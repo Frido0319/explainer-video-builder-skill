@@ -40,7 +40,7 @@
       "id": 6,
       "name": "uniform-loudness-and-word-boundary",
       "prompt": "实测段解说突然变响、发杂；另外机载端要整体连读、编码端据此动态调整要这么断。",
-      "expected_output": "混音改用确定性 numpy 混音器 mix_audio.py（不用 ffmpeg amix，规避 4.2.7 响度阶梯），全片逐段 mean_volume 落同一区间（如 -21~-24dB）、demo 段不再爆音；机载端 后加逗号做主题停顿整体连读，编码端，据此，动态调整冗余度（据此 独立成词）；重新生成 TTS/字幕并重合成验证",
+      "expected_output": "混音改用确定性 numpy 混音器 mix_audio.py（不用 ffmpeg amix，规避 4.2.7 响度阶梯），全片逐段 mean_volume 落同一区间（如 -21~-24dB）、demo 段不再爆音；机载端 直接连读不加逗号标记，编码端、据此、动态调整冗余度用顿号断句（据此 独立成词）；重新生成 TTS/字幕并重合成验证",
       "files": []
     }
   ]
