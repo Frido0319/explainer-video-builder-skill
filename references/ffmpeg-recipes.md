@@ -36,38 +36,21 @@ ffmpeg -y -i "$RAW_DEMO" -loop 1 -i cards/demo_bg.png \
 
 - 源视频先做黑屏检测（见 `verification.md`），`S_DEMO_DUR` 取干净段长，**宁短勿长**。
 
-## 3. 多段配音合成音轨
+## 3. 多段配音合成音轨（确定性 numpy 混音，勿用 amix）
+
+**用 `scripts/mix_audio.py`（确定性混音器）代替 ffmpeg amix**：按时间轴把各段配音解码为 PCM 放置到静音底，全程无自动增益 → 全片响度一致。
 
 ```bash
-ffmpeg -y \
-  -i audio/seg0.mp3 -i audio/seg1.mp3 ... \
-  -filter_complex "\
-[0:a]aresample=44100,aformat=channel_layouts=stereo,adelay=0|0[v0];\
-[1:a]aresample=44100,aformat=channel_layouts=stereo,adelay=5260|5260[v1];\
-...
-[v0][v1][...]amix=inputs=6:duration=longest:dropout_transition=0,volume=6.0,apad=whole_dur=$END_END[a]" \
-  -map "[a]" -t "$END_END" -c:a pcm_s16le audio/voice_track.wav
+python3 mix_audio.py "$END_END"     # 读 make_tts.SEGS + SEG_STARTS → audio/full_audio.wav
 ```
 
-- 每段统一 `aresample=44100` + `aformat=channel_layouts=stereo`，否则 amix 报错或声道不一致。
-- `adelay=偏移|偏移`（左右声道都加）。
-- `amix` 音量会除 N，`volume=6.0` 补偿（N=6 时）；`apad=whole_dur=总长` 补齐静音尾巴。
+`mix_audio.py` 做的事：单声道解码各配音段 → 原幅度写入 L/R 两声道 → 按 `SEG_STARTS` 放置在时间轴 → 混入立体声背景乐 bed（`BGM_VOL` 调音量）→ 结尾 `afade` 淡出 → 峰值 >0.99 才整体衰减（削波保护）。
 
-## 4. 混背景乐 + 防削波
+**为什么不用 ffmpeg `amix`**：4.2.7 的 amix 按"活跃输入数"动态归一化（`normalize` 选项 4.4 才加入），对**不重叠**的音轨会形成响度阶梯——seg0≈-25dB 一路涨到 demo 段≈-9dB，实测段突然变响变"杂"。
 
-```bash
-ffmpeg -y -i audio/voice_track.wav -i audio/bgm.wav \
-  -filter_complex "\
-[0:a]volume=2.0[v];\
-[1:a]volume=0.22[bg];\
-[v][bg]amix=inputs=2:duration=first:dropout_transition=0,\
-afade=t=out:st=$END_END-2.85:d=2.85,\
-alimiter=limit=0.95:level=disabled[a]" \
-  -map "[a]" -t "$END_END" -c:a pcm_s16le audio/full_audio.wav
-```
+**`-ac 2` 单声道→立体声的 -3dB 坑**：配音段 mp3 是单声道，若用 `-ac 2` 转立体声，swresampler 把能量分到两声道、每声道幅度减半（正好 -3dB），全片被白吞 3dB。解法：配音段按单声道解码（`-ac 1`），同一份样本原幅度写入 L/R；背景乐本就是立体声，`-ac 2` 直通无损。
 
-- 背景乐音量压到配音之下（约 0.22 vs 2.0）。
-- 结尾 `afade` 淡出；**最后 `alimiter=limit=0.95` 防削波**——多路叠加必加，否则爆音。
+（旧 amix 配方仅作参考，勿直接复用：`aresample=44100 + aformat=channel_layouts=stereo + adelay=偏移|偏移 → amix=duration=longest:dropout_transition=0 + volume=N 补偿 + apad=whole_dur=$END_END`）
 
 ## 5. 拼接画面 + 合成最终视频
 

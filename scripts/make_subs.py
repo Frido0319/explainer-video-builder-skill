@@ -25,19 +25,20 @@ TAIL_PUNCT = "。！？；，、：· "
 HARD_BREAK = "。！？；"
 # 软断行符：段内可优先在此断行，且标点保留在句中
 SOFT_BREAK = "，、："
-# 不可被断行切开的整体术语（可依项目扩充）
-PROTECTED = ("前向纠错", "弱网场景")
+# 不可被断行切开的整体术语
+PROTECTED = ("前向纠错", "弱网场景", "机载端")
 MAX_LINE = 22  # 每行最大字数
 
-# 各段配音的起始时间（秒），与 build_video.sh 时间轴（adelay 偏移毫秒/1000）一致
+# 各段配音的起始时间（毫秒偏移 / 1000），与 build_video.sh 时间轴一致
 SEG_STARTS = {
-    "seg0_title": 0.0,
-    "seg1_bg": 5.6,
-    "seg2_scheme": 24.4,
-    "seg3_arch": 89.0,
+    "seg0_title":   0.0,
+    "seg1_bg":      5.6,
+    "seg2_scheme":  24.4,
+    "seg_compare":  46.0,
+    "seg_innov":    67.0,
+    "seg3_arch":    89.0,
     "seg4_feedback": 112.0,
-    "seg5_demo": 124.5,
-    # 若 SEGS 有更多段，按 build_video.sh 的实际偏移补上
+    "seg5_demo":    124.5,
 }
 
 def safe_cut(s):
@@ -112,8 +113,6 @@ def main():
     cues = []
     idx = 1
     for name, txt in SEGS:
-        if name not in SEG_STARTS:
-            continue
         start = SEG_STARTS[name]
         dur = dur_of(name)
         end = start + dur

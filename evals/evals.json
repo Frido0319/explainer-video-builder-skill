@@ -35,6 +35,13 @@
       "prompt": "要配上字幕，但字幕不能遮挡任何文字和图片。",
       "expected_output": "make_subs.py 从配音文案生成 subs.srt；所有卡片内容最下缘 ≤y940；字幕烧录后占 y960-1049；verify_video.py --cards 终检：卡片区 diff<4 且字幕带渲染像素>300",
       "files": []
+    },
+    {
+      "id": 6,
+      "name": "uniform-loudness-and-word-boundary",
+      "prompt": "实测段解说突然变响、发杂；另外机载端要整体连读、编码端据此动态调整要这么断。",
+      "expected_output": "混音改用确定性 numpy 混音器 mix_audio.py（不用 ffmpeg amix，规避 4.2.7 响度阶梯），全片逐段 mean_volume 落同一区间（如 -21~-24dB）、demo 段不再爆音；机载端 后加逗号做主题停顿整体连读，编码端，据此，动态调整冗余度（据此 独立成词）；重新生成 TTS/字幕并重合成验证",
+      "files": []
     }
   ]
 }
