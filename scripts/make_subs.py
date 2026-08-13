@@ -8,9 +8,24 @@
   2. 编辑下方 SEG_STARTS：各段配音起始秒（与 build_video.sh 的 adelay/1000 一致）
   3. python3 make_subs.py → 生成 subs.srt
   4. 合成时用 subtitles 滤镜烧录（见 references/ffmpeg-recipes.md）
+
+字幕标点规范（用户要求）：
+  ① 行尾（尾巴）不加任何标点：。！？；，、：· 一律剥掉
+  ② 句中分隔用分号；：句中若出现句末标点(。！？) → 转成分号；
+  ③ 句中偶尔可保留逗号，、顿号、
 """
 import re, subprocess, os
 from make_tts import SEGS
+
+# 行尾要剥掉的标点/空格（含全角空格）
+TAIL_PUNCT = "。！？；，、：· "
+FULL_STOP = "。！？"
+
+def clean_punct(line):
+    """字幕标点清理：去尾标点 → 句中句末标点转分号（句中逗号/顿号保留）"""
+    line = line.rstrip(TAIL_PUNCT)
+    line = re.sub("[" + FULL_STOP + "]", "；", line)
+    return line
 
 # 各段配音的起始时间（秒），与 build_video.sh 时间轴（adelay 偏移毫秒/1000）一致
 SEG_STARTS = {
@@ -66,7 +81,7 @@ def main():
         start = SEG_STARTS[name]
         dur = dur_of(name)
         end = start + dur
-        lines = split_lines(txt)
+        lines = [l for l in (clean_punct(x) for x in split_lines(txt)) if l.strip()]
         total = sum(len(l) for l in lines)
         pos = start
         for i, line in enumerate(lines):

@@ -86,8 +86,11 @@ def check_card(video, t, tmpdir, cards_dir):
     for name in sorted(os.listdir(cards_dir)):
         if not name.endswith(".png") or name.startswith("demo"):
             continue
-        s = np.array(Image.open(os.path.join(cards_dir, name)).convert("RGB"),
-                     dtype=np.int16)
+        im = Image.open(os.path.join(cards_dir, name))
+        # 只比对与帧同尺寸的全幅卡片，跳过小素材（logo/插图）
+        if im.size != (1920, 1080):
+            continue
+        s = np.array(im.convert("RGB"), dtype=np.int16)
         diff = float(np.abs(v[:SUB_BAND_TOP] - s[:SUB_BAND_TOP]).mean())
         if diff < best_diff:
             best, best_diff, best_card = s, diff, name
