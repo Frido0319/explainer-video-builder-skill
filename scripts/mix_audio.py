@@ -10,9 +10,18 @@
 坑：配音段 mp3 是单声道，若用 ffmpeg `-ac 2` 转立体声，swresampler 会把每声道
 幅度减半（能量分到两声道，正好 -3dB），全片被白吞 3dB。因此配音段按单声道
 解码，同一份样本原幅度写入 L/R 两声道；背景乐本就是立体声，走立体声解码。
-用法: python3 mix_audio.py <END_END>  （END_END=总时长秒）
+
+实战参数（智信2026 迭代后沉淀）：
+  - BGM 默认用 assets/bgm_default.mp3（洛克王国人鱼湾/兜圈 BGM）
+  - BGM_VOL 默认 0.08，低于人声约 30dB，足够轻不压旁白
+  - 结尾提前 FADE_BEFORE=3s 开始淡出，最后 SILENT_TAIL=5s 静音
+    （避免 BGM 在片尾重播/结束页还响，也避免音乐戛然而止）
+  - 用户要换 BGM 时，you-get 从网上下载后放任意路径，再传 --bgm 指定
+
+用法: python3 mix_audio.py <END_END> [--bgm PATH] [--bgm-vol VOL] [--fade-before S] [--silent-tail S]
+       END_END=总时长秒
 """
-import sys, subprocess, wave
+import sys, subprocess, wave, argparse, os
 import numpy as np
 from make_tts import SEGS
 
@@ -29,8 +38,12 @@ SEG_STARTS = {
     "seg4_feedback": 112.0,
     "seg5_demo":    124.5,
 }
-BGM_VOL = 0.11   # 背景乐 bed（与原 amix 后等效电平一致，≈-53.6dB，低于人声 30dB）
-FADE_DUR = 2.85  # 结尾淡出时长（s）
+
+# 默认 BGM 与音量（实战沉淀：轻、不压人声、结尾淡出+静音）
+DEFAULT_BGM = os.path.join(os.path.dirname(__file__), "..", "assets", "bgm_default.mp3")
+DEFAULT_BGM_VOL = 0.08     # 背景乐 bed，低于人声约 30dB
+DEFAULT_FADE_BEFORE = 3.0  # 结尾前 N 秒开始淡出
+DEFAULT_SILENT_TAIL = 5.0  # 最后 N 秒完全静音（如片尾重播/结束页留白）
 
 def decode_mono(path):
     """ffmpeg 解码为 44.1k 单声道 float32 一维数组（配音段用，避免 -ac 2 的 -3dB 增益损失）"""
@@ -49,7 +62,15 @@ def decode_stereo(path):
     return np.frombuffer(r.stdout, dtype=np.float32).reshape(-1, 2)
 
 def main():
-    end = float(sys.argv[1]) if len(sys.argv) > 1 else 157.124
+    parser = argparse.ArgumentParser(description="确定性 numpy 混音")
+    parser.add_argument("end", type=float, help="总时长秒")
+    parser.add_argument("--bgm", default=DEFAULT_BGM, help="BGM 文件路径（默认 assets/bgm_default.mp3）")
+    parser.add_argument("--bgm-vol", type=float, default=DEFAULT_BGM_VOL, help="BGM 音量系数（默认 0.08）")
+    parser.add_argument("--fade-before", type=float, default=DEFAULT_FADE_BEFORE, help="结尾前 N 秒开始淡出（默认 3）")
+    parser.add_argument("--silent-tail", type=float, default=DEFAULT_SILENT_TAIL, help="最后 N 秒静音（默认 5）")
+    args = parser.parse_args()
+
+    end = args.end
     n = int(round(end * SR))
     mix = np.zeros((n, 2), dtype=np.float64)
 
@@ -64,19 +85,25 @@ def main():
         print(f"  放置 {name} @{SEG_STARTS[name]:.1f}s  len={len(a)/SR:.2f}s")
 
     # 2) 背景乐循环铺满全片（立体声）
-    bgm = decode_stereo("audio/bgm.wav")
+    bgm_path = args.bgm if os.path.exists(args.bgm) else DEFAULT_BGM
+    if not os.path.exists(bgm_path):
+        raise FileNotFoundError(f"BGM 不存在: {bgm_path}；请将 BGM 放到该路径或用 --bgm 指定")
+    bgm = decode_stereo(bgm_path)
     bg_idx = 0
     for i in range(n):
-        mix[i] += bgm[bg_idx] * BGM_VOL
+        mix[i] += bgm[bg_idx] * args.bgm_vol
         bg_idx += 1
         if bg_idx >= len(bgm):
             bg_idx = 0
 
-    # 3) 结尾淡出
-    f0 = int(round((end - FADE_DUR) * SR))
-    if f0 < n:
-        fade = np.linspace(1.0, 0.0, n - f0, dtype=np.float64)[:, None]
-        mix[f0:] *= fade
+    # 3) 结尾淡出 + 最后 N 秒静音
+    silent_start = max(0, int(round((end - args.silent_tail) * SR)))
+    fade_start = max(0, int(round((end - args.silent_tail - args.fade_before) * SR)))
+    if fade_start < silent_start:
+        fade_len = silent_start - fade_start
+        fade = np.linspace(1.0, 0.0, fade_len, dtype=np.float64)[:, None]
+        mix[fade_start:silent_start] *= fade
+    mix[silent_start:] = 0.0
 
     # 4) 削波保护
     peak = float(np.abs(mix).max())
@@ -93,7 +120,7 @@ def main():
         w.setsampwidth(2)
         w.setframerate(SR)
         w.writeframes(data.tobytes())
-    print(f"full_audio.wav 写出 {end:.3f}s")
+    print(f"full_audio.wav 写出 {end:.3f}s（BGM: {bgm_path}, vol={args.bgm_vol}, fade_before={args.fade_before}, silent_tail={args.silent_tail}）")
 
 if __name__ == "__main__":
     main()

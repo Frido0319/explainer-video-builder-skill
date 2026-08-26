@@ -66,14 +66,15 @@ ffmpeg -y -f concat -safe 0 -i seg/concat.txt -c copy seg/video_only.mp4
 
 ```bash
 ffmpeg -y -i seg/video_only.mp4 -i audio/full_audio.wav \
-  -vf "subtitles=subs.srt:force_style='FontName=Noto Sans CJK SC,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=2,Alignment=2'" \
+  -vf "subtitles=subs.srt:force_style='FontName=Noto Sans CJK SC,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=2,Alignment=2'" \
   -map 0:v -map 1:a -c:v libx264 -preset medium -crf 20 -c:a aac -b:a 192k \
   -movflags +faststart -t "$END_END" 成品.mp4
 ```
 
+- **字号实战选 18**：底部居中字幕，24px 在部分卡片上会挡原视频底部文字，18px 更窄更安全；若仍挡，再小到 16px 或上移位置（Alignment=6 中上/顶部两行）。
 - **绝不能加 `MarginV=45`**：实测 ffmpeg 4.2.7 + libass 下，force_style 里含 MarginV=45 会导致**字幕完全不渲染**（成片整帧 0 暗像素）。去掉 MarginV 后正常。
 - 字幕烧录后实际占 **y960-1049**，所以卡片内容最下缘要压到 ≤y940（见 cards.md）。
-- 8 位色值 + `Shadow=2` + `Alignment=2`（底部居中）在此版本 libass 正常。
+- `Alignment=2` 在此版本 libass 中为底部居中（实战约 y990 附近）；8 位色值 + `Shadow=2` 正常。
 - 输出 H.264 + AAC + faststart，1920×1080 yuv420p。
 
 ## 6. 视频打不开（GStreamer 解码器缺失）
