@@ -113,7 +113,7 @@ python3 -m explainer_video_v2.cli verify path/to/project.json
 
 V2 支持四类画面：`card`（数据驱动科研卡片）、`image`（图片完整缩放）、`pptx`（只读导出指定 PPT/PPTX 页）、`clip`（原视频片段压缩或保速使用）。`pptx` 使用 1 起始的 `slide` 页码，转换缓存写入 `output_dir/work/pptx`，原文件不修改。默认主题 `research_ppt` 参考正式项目申报 PPT：白底、科研蓝标题、红色结论强调、黄色标签。
 
-最小可运行清单见 `examples/create_minimal/project.json`；现有视频精剪迁移见 `examples/automotive_rag/project.json`。
+最小可运行清单见 `examples/create_minimal/project.json`；中性的现有视频精剪示例见 `examples/enhance_minimal/project.json`。
 
 ### V2 不可破坏约束
 

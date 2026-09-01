@@ -1,3 +1,4 @@
+import ast
 import tempfile
 import unittest
 from pathlib import Path
@@ -106,12 +107,17 @@ class CardTests(unittest.TestCase):
                 bottom_after_zoom = 540 + (card_content_bottom(spec) - 540) * 1.025
                 self.assertLessEqual(bottom_after_zoom, theme.subtitle_safe_y)
 
-    def test_renderer_contains_no_project_specific_copy(self):
-        module_text = (Path(__file__).parents[1] / "explainer_video_v2" / "cards.py").read_text(
-            encoding="utf-8"
-        )
-        for forbidden in ("RAG", "E5", "K1", "喷泉码", "发动机"):
-            self.assertNotIn(forbidden, module_text)
+    def test_renderer_contains_no_hard_coded_chinese_copy(self):
+        module_path = Path(__file__).parents[1] / "explainer_video_v2" / "cards.py"
+        tree = ast.parse(module_path.read_text(encoding="utf-8"))
+        chinese_literals = [
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and any("\u4e00" <= char <= "\u9fff" for char in node.value)
+        ]
+        self.assertEqual(chinese_literals, [])
 
 
 if __name__ == "__main__":

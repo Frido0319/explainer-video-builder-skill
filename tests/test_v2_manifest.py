@@ -13,7 +13,11 @@ def card_segment(start=0.0, end=10.0, segment_id="card"):
         "kind": "card",
         "start": start,
         "end": end,
-        "card": {"template": "hero", "title": "测试"},
+        "card": {
+            "template": "hero",
+            "kicker": "测试栏目",
+            "title_lines": [{"text": "测试标题"}],
+        },
     }
 
 
@@ -106,6 +110,110 @@ class ManifestTests(unittest.TestCase):
                 ValueError, "output_name"
             ):
                 validate_manifest(data)
+
+    def test_visual_and_narration_ids_must_be_safe_filenames(self):
+        for field, unsafe_id in (("visual", "../../escape"), ("narration", "..\\escape")):
+            data = copy.deepcopy(minimal_manifest())
+            if field == "visual":
+                data["visuals"][0]["id"] = unsafe_id
+            else:
+                data["narration"][0]["id"] = unsafe_id
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "safe identifier"):
+                validate_manifest(data)
+
+    def test_card_templates_require_fields_used_by_renderers(self):
+        cases = {
+            "hero": (
+                {"template": "hero", "kicker": "栏目", "title_lines": [{"text": "标题"}]},
+                "kicker",
+            ),
+            "process": (
+                {
+                    "template": "process",
+                    "title": "流程",
+                    "steps": [
+                        {"number": "01", "text": "输入"},
+                        {"number": "02", "text": "输出"},
+                    ],
+                    "takeaway": {"lead": "结论", "detail": "流程稳定"},
+                },
+                "title",
+            ),
+            "metric_compare": (
+                {
+                    "template": "metric_compare",
+                    "title": "指标",
+                    "before": "50%",
+                    "after": "90%",
+                    "takeaway": {"lead": "结论", "detail": "明显提升"},
+                },
+                "before",
+            ),
+            "chapter": (
+                {
+                    "template": "chapter",
+                    "title": "章节",
+                    "items": [
+                        {"title": "一", "detail": "说明"},
+                        {"title": "二", "detail": "说明"},
+                    ],
+                    "takeaway": {"lead": "结论", "detail": "结构清晰"},
+                },
+                "items",
+            ),
+            "metric_grid": (
+                {
+                    "template": "metric_grid",
+                    "title": "数据",
+                    "metrics": [
+                        {"value": "10", "label": "指标一"},
+                        {"value": "20", "label": "指标二"},
+                    ],
+                    "takeaway": {"lead": "结论", "detail": "结果可靠"},
+                },
+                "metrics",
+            ),
+            "ending": (
+                {
+                    "template": "ending",
+                    "brand": "品牌",
+                    "headline": "标题",
+                    "subline": "副标题",
+                    "badge": "完成",
+                },
+                "badge",
+            ),
+        }
+        for template, (spec, missing_field) in cases.items():
+            data = copy.deepcopy(minimal_manifest())
+            del spec[missing_field]
+            data["visuals"][0]["card"] = spec
+            with self.subTest(template=template), self.assertRaisesRegex(
+                ValueError, "missing fields"
+            ):
+                validate_manifest(data)
+
+    def test_card_templates_validate_nested_required_fields(self):
+        data = copy.deepcopy(minimal_manifest())
+        data["visuals"][0]["card"] = {
+            "template": "process",
+            "title": "流程",
+            "steps": [
+                {"number": "01", "text": "输入"},
+                {"number": "02"},
+            ],
+            "takeaway": {"lead": "结论", "detail": "流程稳定"},
+        }
+        with self.assertRaisesRegex(ValueError, "missing fields"):
+            validate_manifest(data)
+
+    def test_hero_stat_style_must_be_supported(self):
+        data = copy.deepcopy(minimal_manifest())
+        data["visuals"][0]["card"]["stats"] = [
+            {"text": "指标", "style": "unknown"}
+        ]
+        with self.assertRaisesRegex(ValueError, "stat style"):
+            validate_manifest(data)
 
     def test_verification_requires_at_least_one_frame_time(self):
         data = copy.deepcopy(minimal_manifest())

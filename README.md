@@ -181,7 +181,7 @@ python3 -m explainer_video_v2.cli verify examples/create_minimal/project.json
 可直接查看：
 
 - `examples/create_minimal/project.json`：不依赖外部素材的纯 `create` 示例。
-- `examples/automotive_rag/project.json`：现有视频精剪与科研卡片混排的 `enhance` 示例。
+- `examples/enhance_minimal/project.json`：不包含用户项目内容的 `enhance` 示例。
 
 模式选择遵循授权边界：未明确允许剪辑时，继续保持源视频时长；只有用户明确说可以删除、压缩、重新排序或重拍，才启用 `enhance`。
 

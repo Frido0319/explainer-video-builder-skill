@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,7 +13,7 @@ from explainer_video_v2.media import (
     image_video_filter,
 )
 
-from tests.test_v2_manifest import minimal_manifest
+from tests.test_v2_manifest import clip_segment, minimal_manifest
 
 
 class PipelineTests(unittest.TestCase):
@@ -72,6 +73,67 @@ class PipelineTests(unittest.TestCase):
             with patch.dict("os.environ", {"V2_TEST_ROOT": directory}):
                 prepared = prepare_project(path)
         self.assertEqual(Path(prepared["output_dir"]), Path(directory) / "output")
+
+    def test_prepare_project_rejects_output_that_overwrites_source(self):
+        data = minimal_manifest(mode="enhance", visuals=[clip_segment()])
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source.mp4"
+            source.touch()
+            data["visuals"][0]["source"] = str(source)
+            data["output_dir"] = directory
+            data["output_name"] = source.name
+            path = Path(directory) / "project.json"
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "overwrite source"):
+                prepare_project(path)
+
+    def test_prepare_project_rejects_source_inside_output_directory(self):
+        data = minimal_manifest(mode="enhance", visuals=[clip_segment()])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output_dir = root / "output"
+            source = output_dir / "work" / "video_only.mp4"
+            source.parent.mkdir(parents=True)
+            source.touch()
+            data["visuals"][0]["source"] = str(source)
+            data["output_dir"] = str(output_dir)
+            path = root / "project.json"
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "outside output_dir"):
+                prepare_project(path)
+
+    def test_prepare_project_rejects_symlinks_inside_output_directory(self):
+        data = minimal_manifest()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output_dir = root / "output"
+            work_dir = output_dir / "work"
+            work_dir.mkdir(parents=True)
+            external = root / "external.mp4"
+            external.touch()
+            (work_dir / "video_only.mp4").symlink_to(external)
+            data["output_dir"] = str(output_dir)
+            path = root / "project.json"
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "symbolic link"):
+                prepare_project(path)
+
+    def test_prepare_project_rejects_symlink_output_aliasing_source(self):
+        data = minimal_manifest(mode="enhance", visuals=[clip_segment()])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.mp4"
+            source.touch()
+            output_dir = root / "output"
+            output_dir.mkdir()
+            (output_dir / "final.mp4").symlink_to(source)
+            data["visuals"][0]["source"] = str(source)
+            data["output_dir"] = str(output_dir)
+            data["output_name"] = "final.mp4"
+            path = root / "project.json"
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "overwrite source"):
+                prepare_project(path)
 
     def test_final_command_uses_delivery_codecs_and_faststart(self):
         command = final_ffmpeg_command(

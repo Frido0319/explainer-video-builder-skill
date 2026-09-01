@@ -13,6 +13,7 @@ import numpy as np
 from PIL import Image
 
 from .builder import prepare_project
+from .provenance import assert_build_fingerprint
 from .themes import get_theme
 
 
@@ -170,6 +171,7 @@ def verify_project(manifest_path: Path) -> dict[str, Any]:
     work_dir = Path(data["output_dir"]) / "work"
     if not output.is_file():
         raise FileNotFoundError(output)
+    assert_build_fingerprint(data, work_dir, output)
     probe = subprocess.run(
         [
             "ffprobe",

@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "mode": "enhance",
+  "theme": "research_ppt",
+  "duration": 12.0,
+  "fps": 24,
+  "width": 1920,
+  "height": 1080,
+  "output_dir": "${V2_OUTPUT_DIR}",
+  "output_name": "现有视频精剪示例_V2.mp4",
+  "audio": {
+    "voice": "zh-CN-YunjianNeural",
+    "rate": "+18%",
+    "sample_rate": 44100,
+    "bgm_volume": 0.08,
+    "fade_seconds": 3.0
+  },
+  "visuals": [
+    {
+      "id": "source_clip",
+      "kind": "clip",
+      "start": 0.0,
+      "end": 8.0,
+      "source": "${V2_SOURCE_VIDEO}",
+      "source_start": 0.0,
+      "source_duration": 8.0,
+      "label": "真实画面 · 核心片段"
+    },
+    {
+      "id": "ending",
+      "kind": "card",
+      "start": 8.0,
+      "end": 12.0,
+      "card": {
+        "template": "ending",
+        "brand": "成果展示",
+        "headline": "保留有效信息",
+        "subline": "重新组织叙事节奏",
+        "badge": "精简 · 清晰 · 可核验"
+      }
+    }
+  ],
+  "narration": [
+    {
+      "id": "source_summary",
+      "start": 0.4,
+      "end_limit": 7.8,
+      "text": "保留原视频中的核心画面，并让旁白与内容严格对应。"
+    },
+    {
+      "id": "ending_summary",
+      "start": 8.2,
+      "end_limit": 12.0,
+      "text": "重新组织叙事节奏，让成果更清晰。"
+    }
+  ],
+  "verification": {
+    "frame_times": [2.0, 6.0, 10.0],
+    "duration_tolerance": 0.1
+  }
+}
