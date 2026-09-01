@@ -31,6 +31,53 @@
 
 ---
 
+## 版本选择：V1 / V2
+
+同一个 skill 同时提供三个可选方向，V2 不会覆盖 V1。用户没有指定完整版本时，skill 会展示完整三项菜单并等待用户选择：
+
+**编号是版本选择协议，不是局部菜单的装饰序号。** 在整段对话中始终保持 `1=V1`、`2=V2 create`、`3=V2 enhance`，不得因只展示 V2 子方向而改变映射。
+
+V2 子菜单固定模板（必须原样使用序号）：
+
+```text
+请选择 V2 子方向：
+
+2. V2 create｜重新制作
+   根据 PPT、图片、文案和素材，从零制作讲解视频
+
+3. V2 enhance｜精剪重构
+   可删除、压缩、重新排序原视频，并增加标题卡、数据卡等新画面
+
+请回复 2 / 3，或直接回复 V2 create / V2 enhance
+```
+
+```text
+请选择视频制作方向：
+
+1. V1｜保真增强
+   保留原画面、顺序和时长，只添加配音、字幕和 BGM
+
+2. V2 create｜重新制作
+   根据 PPT、图片、文案和素材，从零制作讲解视频
+
+3. V2 enhance｜精剪重构
+   可删除、压缩、重新排序原视频，并增加标题卡、数据卡等新画面
+
+根据你的素材和目标，我推荐：<V1 / V2 create / V2 enhance>
+推荐理由：<一句与当前请求直接相关的理由>
+请回复 1 / 2 / 3，或直接回复 V1 / V2 create / V2 enhance
+```
+
+- 推荐只帮助用户判断，skill 必须等待选择，不能按推荐项自动开工。
+- 用户只说 V2 时，列出两个 V2 子方向并等待选择，并沿用完整菜单中的全局编号：
+  - `2. V2 create｜重新制作`
+  - `3. V2 enhance｜精剪重构`
+- 提示用户“请回复 2 / 3”；不得在 V2 子菜单中重新编号为 1 / 2。
+- 用户已明确选择 V1、V2 create 或 V2 enhance时，复述边界后直接执行，不重复展示菜单。
+- 用户回复 1 / 2 / 3 时，分别映射到 V1 / V2 create / V2 enhance。
+- 选择 V2 enhance，表示授权菜单列明的删除、压缩、重新排序和增加信息卡操作。
+- 选择与请求冲突时不会静默改版本。例如 V1 不执行删除镜头，需改选 V2 enhance。
+
 ## Why it exists
 
 学生、工程师和课题组经常需要"给老师 / 组会 / 结题做一个项目讲解视频"，但手搓视频极其耗时：
@@ -63,6 +110,9 @@
 | 默认 BGM | `assets/bgm_default.mp3`（洛克王国人鱼湾/兜圈活音乐），音量 0.08，结尾 3s 淡出 + 5s 静音 |
 | 字幕底部居中 | 实战字号 18px，遇到原视频底部文字可调小或上移 |
 | 保持原视频时长 | 用户未要求剪辑时，不动原画面时长，配音/字幕/背景音叠加其上 |
+| V2 双模式 | `create` 从 PPT/图片/文案创建；`enhance` 在明确授权后精剪现有视频 |
+| 科研汇报主题 | `research_ppt` 统一蓝白红视觉语言，并为 PPT 页预留字幕安全区 |
+| 发音词典 | “重排”自动改为“重新排序”等自然说法，TTS 与字幕共享改写结果 |
 | 无视觉自检 | 像素亮度 + OCR + 卡片比对 + 字幕带检查，无图形界面也能验证 |
 | 可复现工作流 | 改文案改时间轴即重出，无需手动剪辑 |
 
@@ -90,10 +140,13 @@ git clone https://github.com/Frido0319/explainer-video-builder-skill.git ~/.clau
 或手动拷贝本地目录。依赖（Ubuntu 已验证）：
 
 ```bash
-sudo apt-get install -y ffmpeg fonts-noto-cjk tesseract-ocr tesseract-ocr-chi-sim \
+sudo apt-get install -y ffmpeg libreoffice poppler-utils fonts-noto-cjk tesseract-ocr tesseract-ocr-chi-sim \
   gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
-pip install edge-tts==7.2.8 pillow
+pip install edge-tts==7.2.8 pillow numpy
 ```
+
+macOS/Windows 未安装 Noto CJK 时，可通过 `EXPLAINER_VIDEO_FONT_REGULAR` 和
+`EXPLAINER_VIDEO_FONT_BOLD` 指定中文字体文件；程序也会自动尝试 PingFang 和微软雅黑。
 
 ## Workflow
 
@@ -110,6 +163,28 @@ flowchart LR
 
 九段叙事：片头 → 背景 → 痛点 → 方案 → 架构 → 反馈闭环 → **实测预告** → 实测视频 → 结束页。字幕由配音文案自动生成（`make_subs.py`），烧录时卡片内容已按字幕带（y960-1049）上移避让。
 
+### V2 manifest workflow
+
+V2 把一次性脚本收敛为 `project.json`：
+
+```bash
+python3 -m explainer_video_v2.cli validate examples/create_minimal/project.json
+python3 -m explainer_video_v2.cli build examples/create_minimal/project.json
+python3 -m explainer_video_v2.cli verify examples/create_minimal/project.json
+```
+
+- `mode=create`：从卡片、PPT/PPTX 页、图片和旁白创建新视频。`kind=pptx` 配合 1 起始的 `slide`，构建时只读导出并缓存该页。
+- `mode=enhance`：用户明确允许剪辑后，从现有视频选择、压缩、重新排序片段，并加入新卡片重构叙事。
+- `theme=research_ppt`：复用正式申报 PPT 的蓝白红视觉体系；导入 PPT 页时完整缩放至 y=875 以上，底部留给字幕。
+- `pronunciations`：构建前统一改写易错读词。例如“重排”写入字幕和 TTS 前变成“重新排序”，保证读音与文字一致。
+
+可直接查看：
+
+- `examples/create_minimal/project.json`：不依赖外部素材的纯 `create` 示例。
+- `examples/enhance_minimal/project.json`：不包含用户项目内容的 `enhance` 示例。
+
+模式选择遵循授权边界：未明确允许剪辑时，继续保持源视频时长；只有用户明确说可以删除、压缩、重新排序或重拍，才启用 `enhance`。
+
 ## Quality bar
 
 交付前逐条自查：
@@ -122,7 +197,7 @@ flowchart LR
 - [ ] 实测段未含黑屏（上部亮度无骤降段）
 - [ ] 结束页出现在截断窗口内
 - [ ] 预告卡字线与文字无重叠（间距 ≥40px）
-- [ ] 原视频/画面时长与用户源视频一致，未被剪短
+- [ ] 未获剪辑授权时，原视频/画面时长与源视频一致；获授权的 `enhance` 按 manifest 时间轴验收
 - [ ] 字幕内容与当前画面严格对应，无常识性/单位错误
 - [ ] BGM 音量 0.08 左右，不压人声，片尾 5s 静音、提前 3s 淡出
 - [ ] SVG 架构图坐标对齐网格、通道不穿字
@@ -131,6 +206,18 @@ flowchart LR
 - [ ] 所有素材只读引用，原文件未改动
 
 ## Example prompts
+
+```text
+用 V1 优化这个已有视频：保留全部画面和原时长，只加中文配音、字幕和 BGM。
+```
+
+```text
+用 V2 enhance 重构这个录屏，允许删除、压缩、重新排序和补充科研汇报卡片。
+```
+
+```text
+用 V2 create 根据这些 PPT 页、图片和文案，从零制作一条讲解视频。
+```
 
 ```text
 把我的这个项目和这段素材做成一个中期汇报讲解视频，
@@ -200,4 +287,3 @@ flowchart LR
 └── evals/
     └── evals.json
 ```
-

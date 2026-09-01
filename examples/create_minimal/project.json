@@ -1,0 +1,81 @@
+{
+  "version": 2,
+  "mode": "create",
+  "theme": "research_ppt",
+  "duration": 12.0,
+  "fps": 24,
+  "width": 1920,
+  "height": 1080,
+  "output_dir": "output",
+  "output_name": "技术方案演示_V2.mp4",
+  "audio": {
+    "voice": "zh-CN-YunjianNeural",
+    "rate": "+18%",
+    "sample_rate": 44100,
+    "bgm_volume": 0.08,
+    "fade_seconds": 3.0
+  },
+  "visuals": [
+    {
+      "id": "hero",
+      "kind": "card",
+      "start": 0.0,
+      "end": 4.0,
+      "card": {
+        "template": "hero",
+        "kicker": "技术方案演示",
+        "subtitle": "从问题、方案到验证",
+        "title_lines": [
+          {"text": "结构更清晰", "color": "text"},
+          {"text": "结论有依据", "color": "red"}
+        ],
+        "stats": [
+          {"text": "问题", "style": "blue"},
+          {"text": "验证", "style": "light"}
+        ],
+        "footer": "输入材料 × 结构化表达"
+      }
+    },
+    {
+      "id": "process",
+      "kind": "card",
+      "start": 4.0,
+      "end": 8.0,
+      "card": {
+        "template": "process",
+        "kicker": "工作流程",
+        "title": "从问题走向验证",
+        "subtitle": "一屏只表达一个核心结论",
+        "steps": [
+          {"number": "01", "text": "理解问题"},
+          {"number": "02", "text": "形成方案"},
+          {"number": "03", "text": "验证结果", "accent": "red"}
+        ],
+        "badge": "配音、字幕、画面同步",
+        "takeaway": {"lead": "流程目标：", "detail": "让信息更容易理解和核验"}
+      }
+    },
+    {
+      "id": "ending",
+      "kind": "card",
+      "start": 8.0,
+      "end": 12.0,
+      "card": {
+        "template": "ending",
+        "brand": "技术方案",
+        "headline": "让表达更清晰",
+        "subline": "让每个结论都有依据",
+        "badge": "清晰 · 稳定 · 可核验"
+      }
+    }
+  ],
+  "narration": [
+    {"id": "n1", "start": 0.0, "end_limit": 4.0, "text": "技术方案演示，展示完整工作流程。"},
+    {"id": "n2", "start": 4.0, "end_limit": 8.0, "text": "理解问题，形成方案，验证结果。"},
+    {"id": "n3", "start": 8.0, "end_limit": 12.0, "text": "让每个结论，都有清晰依据。"}
+  ],
+  "verification": {
+    "frame_times": [2.0, 6.0, 10.0],
+    "duration_tolerance": 0.1
+  }
+}

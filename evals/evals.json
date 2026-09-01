@@ -5,7 +5,7 @@
       "id": 1,
       "name": "complete-demo-video",
       "prompt": "把我的项目和素材做成一个中期汇报讲解视频，要有中文配音、配上中文字幕，画面用白底学术风，先讲背景痛点再讲方案，最后放实测视频，大约 1 分钟。",
-      "expected_output": "生成 1080p MP4：九段叙事完整（片头/背景/痛点/方案/实测预告/实测/结束），白底学术卡 + 实测视频，中文配音与画面按时间轴对齐，中文字幕已烧录且不遮挡任何内容",
+      "expected_output": "请求未指定版本；展示完整三项菜单并结合现有素材推荐方向，说明推荐理由后等待用户选择，不自动生成视频",
       "files": []
     },
     {
@@ -41,6 +41,55 @@
       "name": "uniform-loudness-and-word-boundary",
       "prompt": "实测段解说突然变响、发杂；另外机载端要整体连读、编码端据此动态调整要这么断。",
       "expected_output": "混音改用确定性 numpy 混音器 mix_audio.py（不用 ffmpeg amix，规避 4.2.7 响度阶梯），全片逐段 mean_volume 落同一区间（如 -21~-24dB）、demo 段不再爆音；机载端 直接连读不加逗号标记，编码端、据此、动态调整冗余度用顿号断句（据此 独立成词）；重新生成 TTS/字幕并重合成验证",
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "v2-enhance-authorized-editing",
+      "prompt": "这个测试版可以按你的审美删除、压缩、重新排序和重拍。请保留最有说服力的实测片段，补上科研汇报风标题卡和结论卡，最后直接给我视频。",
+      "expected_output": "选择 V2 enhance；生成 version=2 的 project.json，至少包含一个 clip 和一组 card；按证据强度重构时间轴，配音不得超过 end_limit；运行 validate/build/verify 并实际检查抽帧；不修改源视频，main 不受影响",
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "v2-create-from-ppt",
+      "prompt": "参考我给的科研项目申报 PPT 风格，从 PPT 里的背景、研究内容和预期成果做一条 30 秒中文讲解视频。",
+      "expected_output": "选择 V2 create + research_ppt；只读导出 PPT 页，使用 card 与 image 建立时间轴；PPT 页完整 contain 到 y=875 以上，底部字幕安全区不遮结论条或脚注；输出 1920x1080 H.264/AAC MP4 并通过黑帧、时长、音频和抽帧检查",
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "v2-pronunciation-rewrite",
+      "prompt": "旁白里的重排不要读成重量的重，请把重排扩写成重新排序，并保证字幕也同步修改。",
+      "expected_output": "通过默认或项目 pronunciations 将重排非破坏性改写为重新排序；改写后的同一文本同时进入 edge-tts 和 ASS 字幕；原始清单输入不被原地修改；重新构建并验证成片",
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "explicit-version-no-repeat",
+      "prompt": "用 V1 给这个已有成片加中文配音、字幕和 BGM，不改变原视频时长。",
+      "expected_output": "明确告知本次使用 V1（保真增强），保持源视频画面、顺序和总时长，只叠加配音、字幕和 BGM；不再重复展示三项菜单，直接进入 V1 工作流",
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "menu-v2-submode",
+      "prompt": "用 V2 把这些项目素材做成视频。",
+      "expected_output": "用户只指定 V2、没有指定子方向；沿用全局编号列出 2=V2 create（从素材重新制作）和 3=V2 enhance（精剪重构已有视频），提示回复 2/3，不得重新编号为 1/2；结合素材给出推荐并等待用户选择，不开始构建",
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "menu-no-version",
+      "prompt": "给这个已有视频加旁白、中文字幕和轻一点的背景音乐。",
+      "expected_output": "请求没有指定版本；展示 V1、V2 create、V2 enhance 完整三项菜单，根据现有视频只需叠加音频与字幕而推荐 V1，说明推荐理由并等待选择，不自动开工",
+      "files": []
+    },
+    {
+      "id": 13,
+      "name": "numeric-version-selection",
+      "prompt": "3",
+      "expected_output": "把数字 3 映射为 V2 enhance，复述精剪重构边界；该选择授权删除、压缩、重新排序原视频以及增加标题卡和数据卡，然后进入 V2 enhance 工作流",
       "files": []
     }
   ]
